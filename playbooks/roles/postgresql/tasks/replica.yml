@@ -1,3 +1,4 @@
+---
 # -----------------------------
 # Check if replica already initialized
 # -----------------------------
@@ -6,17 +7,12 @@
     path: "{{ pg_data }}/standby.signal"
   register: standby
 
-- name: Check replica config
-  stat:
-    path: "/etc/postgresql/{{ postgres_version }}/{{ pg_cluster }}/postgresql.conf"
-  register: replica_conf
-
 - name: Decide if replica needs setup
   set_fact:
-    replica_needs_setup: "{{ not standby.stat.exists or not replica_conf.stat.exists }}"
+    replica_needs_setup: "{{ not standby.stat.exists }}"
 
 # -----------------------------
-# Stop replica (safe)
+# Stop replica safely
 # -----------------------------
 - name: Stop replica
   service:
@@ -25,40 +21,18 @@
   ignore_errors: yes
 
 # -----------------------------
-# Clean old config/data if needed
+# Clean old data (ONLY if needed)
 # -----------------------------
-- name: Remove old config
-  file:
-    path: "/etc/postgresql/{{ postgres_version }}/{{ pg_cluster }}"
-    state: absent
-  when: replica_needs_setup
-
-- name: Remove old data
+- name: Remove old data directory
   file:
     path: "{{ pg_data }}"
     state: absent
   when: replica_needs_setup
 
 # -----------------------------
-# Create fresh cluster
+# Create clean data directory
 # -----------------------------
-- name: Create replica cluster
-  command: >
-    pg_createcluster {{ postgres_version }} {{ pg_cluster }}
-    --port {{ pg_port }}
-    --datadir {{ pg_data }}
-  when: replica_needs_setup
-
-- name: Stop fresh cluster before basebackup
-  service:
-    name: "postgresql@{{ postgres_version }}-{{ pg_cluster }}"
-    state: stopped
-  when: replica_needs_setup
-
-# -----------------------------
-# Prepare data directory
-# -----------------------------
-- name: Create data directory
+- name: Create fresh data directory
   file:
     path: "{{ pg_data }}"
     state: directory
@@ -68,23 +42,26 @@
   when: replica_needs_setup
 
 # -----------------------------
-# Run basebackup
+# Run basebackup from PRIMARY
 # -----------------------------
 - name: Run basebackup with replication slot
+  become: yes
   become_user: postgres
   shell: |
     PGPASSWORD={{ replication_password }} pg_basebackup \
-      -h 127.0.0.1 \
-      -p 5432 \
+      -h {{ hostvars[groups['database_primary'][0]].private_ip }} \
+      -p {{ hostvars[groups['database_primary'][0]].pg_port }} \
       -D {{ pg_data }} \
       -U {{ replication_user }} \
       -Fp -Xs -P \
       -R \
       -S {{ replication_slot_name }}
+  args:
+    executable: /bin/bash
   when: replica_needs_setup
 
 # -----------------------------
-# Configure postgresql.conf
+# Ensure correct config
 # -----------------------------
 - name: Configure postgresql.conf parameters
   lineinfile:
@@ -105,16 +82,26 @@
     state: started
 
 # -----------------------------
+# Wait for PostgreSQL to be ready
+# -----------------------------
+- name: Wait for PostgreSQL port
+  wait_for:
+    port: "{{ pg_port }}"
+    delay: 3
+    timeout: 30
+
+# -----------------------------
 # Verify replication
 # -----------------------------
-- name: Check WAL receiver
+- name: Check WAL receiver status
+  become: yes
   become_user: postgres
   shell: |
     psql -p {{ pg_port }} -t -c "SELECT status FROM pg_stat_wal_receiver;"
   register: wal_status
   retries: 5
   delay: 3
-  until: wal_status.stdout != ""
+  until: wal_status.stdout | trim != ""
 
 - name: Debug WAL status
   debug:

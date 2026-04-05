@@ -2,6 +2,7 @@
 #- import_playbook: docker.yml
 #- import_playbook: apache.yml
 #- import_playbook: jenkins.yml
-- import_playbook: pgbouncer.yml
+#- import_playbook: pgbouncer.yml
+#- import_playbook: postgresql.yml
 #- import_playbook: pgbouncer_ips.yml
-#- import_playbook: pulsar.yml
+- import_playbook: pulsar.yml

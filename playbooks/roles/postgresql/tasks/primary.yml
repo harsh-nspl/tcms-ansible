@@ -61,11 +61,16 @@
     - { key: hot_standby, value: "on" }
     - { key: synchronous_commit, value: "remote_apply" }
 
+- name: Allow replication dynamically
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    line: "host replication {{ replication_user }} {{ item }}/32 md5"
+  loop: "{{ groups['database_replica'] | map('extract', hostvars, 'private_ip') | list }}"
 
-- name: Reload PostgreSQL
+- name: Restart PostgreSQL
   service:
     name: "postgresql@{{ postgres_version }}-{{ pg_cluster }}"
-    state: reloaded
+    state: restarted
   become: yes
 
 # -----------------------------
@@ -76,3 +81,18 @@
   shell: |
     psql -p {{ pg_port }} -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ replication_user }}'" | grep -q 1 || \
     psql -p {{ pg_port }} -c "CREATE ROLE {{ replication_user }} WITH REPLICATION LOGIN PASSWORD '{{ replication_password }}';"
+
+- name: Check if replication slot exists
+  become: yes
+  become_user: postgres
+  shell: |
+    psql -p {{ pg_port }} -tAc "SELECT slot_name FROM pg_replication_slots WHERE slot_name='{{ replication_slot_name }}';"
+  register: slot_check
+  changed_when: false
+
+- name: Create replication slot
+  become: yes
+  become_user: postgres
+  shell: |
+    psql -p {{ pg_port }} -c "SELECT pg_create_physical_replication_slot('{{ replication_slot_name }}');"
+  when: slot_check.stdout == ""
