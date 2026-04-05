@@ -1,0 +1,17 @@
+---
+- name: Deploy TCMS Application
+  hosts: "{{ 'tomcat_servers' if deploy_type == 'war' else 'batch_server' }}"
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Validate deployment type
+      assert:
+        that:
+          - deploy_type is defined
+          - deploy_type in ['war', 'batch']
+        fail_msg: "deploy_type must be 'war' or 'batch'"
+
+  roles:
+    - role: deploy_backend
+      tags: [deploy]

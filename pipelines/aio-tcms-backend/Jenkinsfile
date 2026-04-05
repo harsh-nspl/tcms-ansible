@@ -28,52 +28,16 @@ pipeline {
 
         stage('Checkout & Build WAR') {
             steps {
-                sshagent(['bitbucket-ssh-key']) {
-                    sh '''#!/bin/bash
-                        set -euxo pipefail
-
-                        mkdir -p "${HOST_BUILD_DIR}"
-                        cd "${HOST_BUILD_DIR}"
-
-                        if [ ! -d "${REPO_NAME}" ]; then
-                            git clone "git@bitbucket.org:harshiet/${REPO_NAME}.git"
-                        fi
-
-                        cd "${REPO_NAME}"
-                        git fetch --all --tags --prune
-                        git checkout "${BRANCH}" || git checkout -b "${BRANCH}" "origin/${BRANCH}"
-                        git reset --hard "origin/${BRANCH}"
-
-                        # Make mvnw executable once
-                        chmod +x mvnw
-
-                        # Build and install topmost module
-                        ./mvnw -f pom.xml clean install -DskipTests -Dmaven.javadoc.skip=true -pl !aio.jira.app:aio-tests-dc
-                    '''
-                }
+                tcmsBuild(
+                    repoName: env.REPO_NAME,
+                    buildCommand: './mvnw -f pom.xml clean install -DskipTests -Dmaven.javadoc.skip=true -pl !aio.jira.app:aio-tests-dc'
+                )
             }
         }
+
         stage('Deploy WAR via Ansible') {
             steps {
-                sshagent(['ssh-key']) {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'aws-credentials',
-                            usernameVariable: 'AWS_ACCESS_KEY_ID',
-                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                        )
-                    ]) {
-                            sh '''
-                            bash -c "
-                            set -euxo pipefail
-
-                            ansible-playbook \
-                              -i ansible/inventories/${ENV}/hosts.ini \
-                              ansible/playbooks/deploy_war.yml
-                            "
-                            '''
-                    }
-                }
+                tcmsDeploy(playbook: 'deploy_war.yml')
             }
         }
     }
@@ -84,6 +48,9 @@ pipeline {
         }
         failure {
             echo "❌ Deployment failed for ${ENV}"
+        }
+        always {
+            cleanWs()
         }
     }
 }

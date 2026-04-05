@@ -1,0 +1,19 @@
+---
+- name: Update apt cache (once per hour)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Install common prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - wget
+      - lsb-release
+      - jq
+      - python3-docker
+    state: present
+  when: ansible_os_family == "Debian"
