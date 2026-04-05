@@ -1,4 +1,5 @@
 def call(Map config) {
+    def org = config.org ?: 'harshiet'
     sshagent(['bitbucket-ssh-key']) {
         sh """#!/bin/bash
             set -euxo pipefail
@@ -6,7 +7,7 @@ def call(Map config) {
             cd "\${HOST_BUILD_DIR}"
 
             if [ ! -d "${config.repoName}" ]; then
-                git clone "git@bitbucket.org:harshiet/${config.repoName}.git"
+                git clone "git@bitbucket.org:${org}/${config.repoName}.git"
             fi
 
             cd "${config.repoName}"
