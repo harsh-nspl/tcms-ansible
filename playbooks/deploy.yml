@@ -1,8 +1,10 @@
 ---
-- name: Deploy TCMS Application
+- name: Deploy TCMS Application (Rolling)
   hosts: "{{ 'tomcat_servers' if deploy_type == 'war' else 'batch_server' }}"
   become: yes
   gather_facts: yes
+  serial: "{{ serial_count | default(1) }}"
+  max_fail_percentage: "{{ max_fail_percentage | default(25) }}"
 
   pre_tasks:
     - name: Validate deployment type
@@ -15,3 +17,11 @@
   roles:
     - role: deploy_backend
       tags: [deploy]
+
+  post_tasks:
+    - name: Wait for application startup
+      wait_for:
+        port: "{{ app_port | default(8080) }}"
+        delay: 5
+        timeout: 60
+      when: deploy_type == 'war'

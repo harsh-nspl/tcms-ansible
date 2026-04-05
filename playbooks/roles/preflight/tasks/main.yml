@@ -1,0 +1,23 @@
+---
+- name: Verify Ansible version
+  assert:
+    that:
+      - ansible_version.full is version('2.14', '>=')
+    fail_msg: "Ansible 2.14+ required. Found: {{ ansible_version.full }}"
+  run_once: true
+  delegate_to: localhost
+
+- name: Verify target connectivity
+  ping:
+
+- name: Verify sudo access
+  command: sudo -n true
+  changed_when: false
+
+- name: Check available disk space
+  assert:
+    that:
+      - item.size_available > 2147483648  # 2GB in bytes
+    fail_msg: "Less than 2GB available on {{ item.mount }}"
+  loop: "{{ ansible_mounts | selectattr('mount', 'in', ['/', '/opt', '/var']) | list }}"
+  when: ansible_mounts is defined

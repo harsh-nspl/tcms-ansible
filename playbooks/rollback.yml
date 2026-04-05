@@ -1,0 +1,52 @@
+---
+- name: Rollback TCMS Deployment
+  hosts: "{{ 'tomcat_servers' if deploy_type == 'war' else 'batch_server' }}"
+  become: yes
+  gather_facts: yes
+  serial: 1
+
+  vars:
+    backup_date: "{{ lookup('env', 'BACKUP_DATE') | default(ansible_date_time.date) }}"
+    backup_dir: "{{ build_dir }}/backups/{{ backup_date }}"
+
+  pre_tasks:
+    - name: Validate deployment type
+      assert:
+        that:
+          - deploy_type is defined
+          - deploy_type in ['war', 'batch']
+        fail_msg: "deploy_type must be 'war' or 'batch'"
+
+    - name: Verify backup env file exists
+      stat:
+        path: "{{ backup_dir }}/{{ deploy_type }}.env.bak"
+      register: backup_env
+      run_once: true
+
+    - name: Warn if no backup found
+      debug:
+        msg: "Warning: No backup env file found for {{ backup_date }}. Using current env."
+      when: not backup_env.stat.exists
+
+  tasks:
+    - name: Restore env file from backup
+      copy:
+        src: "{{ backup_dir }}/{{ deploy_type }}.env.bak"
+        dest: "{{ env_file_path }}"
+        remote_src: yes
+      when: backup_env.stat.exists
+      run_once: true
+
+    - name: Restart container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: started
+        restart: yes
+
+    - name: Wait for container to be running
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+      until: container_info.container.State.Running
+      retries: 6
+      delay: 5
