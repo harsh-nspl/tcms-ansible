@@ -1,0 +1,34 @@
+jenkins_user: jenkins
+jenkins_home: /var/lib/jenkins/
+jenkins_port: 8080
+jenkins_context: /cicd
+jenkins_url: https://{{haproxy_domain}}{{jenkins_context}}
+jenkins_plugins:
+  - git
+  - workflow-aggregator
+  - ssh-agent
+  - credentials-binding
+  - ws-cleanup
+  - timestamper
+  - role-strategy
+  - docker-workflow
+
+repo_url: "git@bitbucket.org:harshiet/aio-tcms-env-config.git"
+credential_id: "bitbucket-ssh-key"
+npm_global_packages:
+  - "@forge/cli"
+
+jenkins_jobs:
+  - name: "AIO Tests - Backend"
+    script: "ansible/pipelines/aio-tcms-backend/Jenkinsfile"
+  - name: "AIO Tests - Frontend"
+    script: "ansible/pipelines/aio-tcms-frontend/Jenkinsfile"
+  - name: "AIO Tests - Batch"
+    script: "ansible/pipelines/aio-tcms-batch/Jenkinsfile"
+#  - name: "generic-deploy"
+#    script: "ansible/pipelines/generic-deploy/Jenkinsfile"
+#  - name: "Setup Apache Pulsar"
+#    script: "ansible/pipelines/apache-pulsar/Jenkinsfile"
+#  - name: "Setup PgBouncer"
+#    script: "ansible/pipelines/pgbouncer/Jenkinsfile"
+

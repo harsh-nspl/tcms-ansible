@@ -1,0 +1,57 @@
+# tasks/port_config.yml
+- name: Ensure Apache listens on port {{ apache_port }}
+  replace:
+    path: /etc/apache2/ports.conf
+    regexp: '^Listen\s+\d+'
+    replace: "Listen {{ apache_port }}"
+  notify: restart apache
+  tags: apache_port
+
+- name: Disable default SSL site
+  command: a2dissite default-ssl
+  ignore_errors: yes
+  notify: restart apache
+  tags: apache_port
+
+- name: Disable Apache SSL module
+  apache2_module:
+    name: ssl
+    state: absent
+  notify: restart apache
+  tags: apache_port
+
+- name: Disable Apache GnuTLS module
+  apache2_module:
+    name: gnutls
+    state: absent
+  notify: restart apache
+  tags: apache_port
+
+- name: Update default VirtualHost to new Apache port
+  replace:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    regexp: '^<VirtualHost \*:\d+>'
+    replace: "<VirtualHost *:{{ apache_port }}>"
+  notify: restart apache
+  tags: apache_port
+
+- name: Comment out SSL Listen 443 directives
+  blockinfile:
+    path: /etc/apache2/ports.conf
+    block: |
+      # <IfModule ssl_module>
+      #    Listen 443
+      # </IfModule>
+      # <IfModule mod_gnutls.c>
+      #    Listen 443
+      # </IfModule>
+    marker: ""
+  notify: restart apache
+  tags: apache_port
+
+- name: Enable Apache service
+  service:
+    name: apache2
+    enabled: yes
+    state: started
+  tags: apache_install

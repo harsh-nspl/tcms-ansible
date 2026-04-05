@@ -1,0 +1,9 @@
+- include_tasks: ../credentials_api.yml
+  vars:
+    cred_id: "aws-credentials"
+    cred_type: "basic"
+    cred_username: "{{ aws_access_key }}"
+    cred_password: "{{ aws_secret_key }}"
+    cred_exists: "{{ aws_credentials_exists }}"
+    cred_should_update: "{{ aws_credentials_should_update }}"
+  when: aws_credentials_should_update

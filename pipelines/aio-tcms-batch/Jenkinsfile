@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'BRANCH',
+            defaultValue: 'release/4.9.4',
+            description: 'Git branch to build'
+        )
+    }
+
+    environment {
+        ENV = "dev"
+        HOST_BUILD_DIR = "/opt/builds"
+        REPO_NAME = "aio-jira-tcms-backend"
+        ANSIBLE_CONFIG = 'ansible/ansible.cfg'
+        AWS_DEFAULT_REGION = 'ap-south-1'
+    }
+
+    options {
+        timestamps()
+        timeout(time: 60, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '3'))
+    }
+
+    stages {
+
+        stage('Checkout & Build JAR') {
+            steps {
+                sshagent(['bitbucket-ssh-key']) {
+                    sh '''#!/bin/bash
+                        set -euxo pipefail
+
+                        mkdir -p "${HOST_BUILD_DIR}"
+                        cd "${HOST_BUILD_DIR}"
+
+                        if [ ! -d "${REPO_NAME}" ]; then
+                            git clone "git@bitbucket.org:harshiet/${REPO_NAME}.git"
+                        fi
+
+                        cd "${REPO_NAME}"
+                        git fetch --all --tags --prune
+                        git checkout "${BRANCH}" || git checkout -b "${BRANCH}" "origin/${BRANCH}"
+                        git reset --hard "origin/${BRANCH}"
+
+                        # Make mvnw executable once
+                        chmod +x mvnw
+
+                        # Build and install topmost module
+                        ./mvnw -f pom.xml clean install -DskipTests -Pjar -pl !aio.jira.app:aio-tests-dc
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy Batch via Ansible') {
+            steps {
+                sshagent(['ssh-key']) {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'aws-credentials',
+                            usernameVariable: 'AWS_ACCESS_KEY_ID',
+                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                        )
+                    ]) {
+                            sh '''
+                            bash -c "
+                            set -euxo pipefail
+
+                            ansible-playbook \
+                              -i ansible/inventories/${ENV}/hosts.ini \
+                              ansible/playbooks/deploy_batch.yml
+                            "
+                            '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+            success {
+                echo "✅ Deployment to ${ENV} successful!"
+            }
+            failure {
+                echo "❌ Deployment failed for ${ENV}"
+            }
+        }
+}

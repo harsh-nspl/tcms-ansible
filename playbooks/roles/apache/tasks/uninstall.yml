@@ -1,0 +1,24 @@
+# tasks/uninstall.yml
+- name: Stop Apache2 service before removal
+  ansible.builtin.service:
+    name: apache2
+    state: stopped
+  ignore_errors: yes
+  tags: apache_uninstall
+
+
+- name: Remove Apache2 and related packages (including config files)
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - apache2-utils
+      - libapache2-mod-php
+    state: absent
+    purge: yes
+  tags: apache_uninstall
+
+- name: Remove orphaned dependencies
+  ansible.builtin.apt:
+    autoremove: yes
+    purge: yes
+  tags: apache_uninstall

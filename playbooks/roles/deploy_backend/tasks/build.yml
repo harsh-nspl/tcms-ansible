@@ -1,0 +1,29 @@
+- name: Copy artifact
+  copy:
+    src: "{{ docker_build.artifact_src }}"
+    dest: "{{ docker_build_context }}/{{ docker_build.artifact_dest }}"
+    mode: '0644'
+  run_once: true
+
+- name: Render Dockerfile
+  template:
+    src: "{{ docker_build.dockerfile_template }}"
+    dest: "{{ docker_build_context }}/Dockerfile"
+  run_once: true
+
+- name: Build Docker image
+  community.docker.docker_image:
+    name: "{{ docker_build.image_name }}"
+    tag: "{{ env }}"
+    source: build
+    force_source: true
+    build:
+      path: "{{ docker_build_context }}"
+      pull: true
+  run_once: true
+
+- name: Cleanup build dir
+  file:
+    path: "{{ docker_build_context }}"
+    state: absent
+  run_once: true

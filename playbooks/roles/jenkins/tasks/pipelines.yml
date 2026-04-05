@@ -1,0 +1,22 @@
+- name: Create Jenkins pipelines
+  delegate_to: localhost
+  run_once: true
+
+  loop: "{{ jenkins_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+  environment:
+    JENKINS_URL: "{{ jenkins_url }}"
+    USER: "{{ jenkins_admin_user }}"
+    TOKEN: "{{ jenkins_admin_token }}"
+    JOB_NAME: "{{ item.name }}"
+    SCRIPT_PATH: "{{ item.script }}"
+    REPO_URL: "{{ repo_url }}"
+    CREDENTIAL_ID: "{{ credential_id }}"
+
+  shell: "{{ role_path }}/files/create_pipeline.sh"
+  args:
+    executable: /bin/bash
+
+  tags: jenkins-pipelines

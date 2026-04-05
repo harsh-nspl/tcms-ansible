@@ -1,0 +1,38 @@
+# roles/haproxy/tasks/main.yml
+
+- name: Install HAProxy
+  apt:
+    name: haproxy
+    state: present
+    update_cache: yes
+  tags: haproxy
+
+- name: Copy HAProxy config from template
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart haproxy
+  tags: haproxy
+
+- name: Copy HAProxy routes map
+  copy:
+    src: routes.map
+    dest: /etc/haproxy/routes.map
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart haproxy
+  tags: haproxy
+
+- import_tasks: ssl.yml
+  tags: ssl
+
+- name: Enable HAProxy service
+  service:
+    name: haproxy
+    enabled: yes
+    state: started
+  tags: haproxy

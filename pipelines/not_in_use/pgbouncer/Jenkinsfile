@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'ENV',
+            choices: ['dev', 'stage', 'prod'],
+            description: 'Environment'
+        )
+    }
+
+    stages {
+        stage('Trigger Generic Deploy') {
+            steps {
+                build job: 'generic-deploy', parameters: [
+                    string(name: 'ENV', value: params.ENV),
+                    string(name: 'COMPONENT', value: 'pgbouncer'),
+                    string(name: 'HOST_GROUP', value: 'pgbouncer_servers')
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,9 @@
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+COPY {{ docker_build.artifact_dest }} aio-tcms-batch.jar
+
+ENV JAVA_OPTS="-Xms512m -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.bin -XX:-UsePerfData"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.awt.headless=true -cp aio-tcms-batch.jar aio.jira.tcms.batch.CloudBatchTrigger"]

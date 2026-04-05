@@ -1,0 +1,6 @@
+- hosts: pulsar_server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: pulsar
+      tags: pulsar

@@ -1,0 +1,26 @@
+- name: Install PostgreSQL everywhere
+  hosts: database
+  become: yes
+  tasks:
+    - name: Run install tasks
+      import_role:
+        name: postgresql
+        tasks_from: install.yml
+
+- name: Configure Primary
+  hosts: database_primary
+  become: yes
+  tasks:
+    - name: Run primary setup
+      import_role:
+        name: postgresql
+        tasks_from: primary.yml
+
+- name: Configure Replica
+  hosts: database_replica
+  become: yes
+  tasks:
+    - name: Run replica setup
+      import_role:
+        name: postgresql
+        tasks_from: replica.yml

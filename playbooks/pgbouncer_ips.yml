@@ -1,0 +1,43 @@
+---
+- name: Gather private IPs from PgBouncer servers
+  hosts: pgbouncer_servers
+  gather_facts: yes
+  tasks:
+    - name: Set private IP fact for each PgBouncer host
+      set_fact:
+        pgbouncer_private_ip: "{{ ansible_default_ipv4.address }}"
+
+- name: Update PostgreSQL pg_hba.conf with PgBouncer IPs for all clusters
+  hosts: database_primary:database_replica
+  gather_facts: yes
+  vars:
+    pg_clusters:
+      - main
+      - replica
+    pgbouncer_ips: "{{ groups['pgbouncer_servers'] | map('extract', hostvars, 'pgbouncer_private_ip') | list }}"
+  tasks:
+    - name: Add PgBouncer IPs to pg_hba.conf for each cluster
+      blockinfile:
+        path: "/etc/postgresql/{{ postgres_version }}/{{ item }}/pg_hba.conf"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR PGBOUNCER"
+        block: |
+          {% for ip in pgbouncer_ips %}
+          host {{ dbname }} {{ dbuser }} {{ ip }}/32 md5
+          {% endfor %}
+      become: yes
+      become_user: postgres
+      loop: "{{ pg_clusters }}"
+      loop_control:
+        loop_var: item
+      notify: "Restart PostgreSQL service for each cluster"
+
+  handlers:
+    - name: Restart PostgreSQL service for each cluster
+      service:
+        name: "postgresql@{{ postgres_version }}-{{ item }}"
+        state: restarted
+      become: yes
+      become_user: root
+      loop: "{{ pg_clusters }}"
+      loop_control:
+        loop_var: item

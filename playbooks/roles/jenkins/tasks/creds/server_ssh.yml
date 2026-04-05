@@ -1,0 +1,25 @@
+- name: Fetch Server SSH key
+  shell: >
+    aws secretsmanager get-secret-value
+    --secret-id {{ aws_ssh_key_secret }}
+    --region ap-south-1
+    --query SecretString
+    --output text | sed 's/\\n/\n/g'
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+    AWS_DEFAULT_REGION: ap-south-1
+  register: ssh_key
+  when: ssh_key_should_update
+  delegate_to: localhost
+  no_log: true
+
+- include_tasks: ../credentials_api.yml
+  vars:
+    cred_id: "ssh-key"
+    cred_type: "ssh"
+    cred_username: "ubuntu"
+    cred_private_key_content: "{{ ssh_key.stdout }}"
+    cred_exists: "{{ ssh_key_exists }}"
+    cred_should_update: "{{ ssh_key_should_update }}"
+  when: ssh_key_should_update

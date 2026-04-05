@@ -1,0 +1,10 @@
+- name: restart jenkins
+  service:
+    name: jenkins
+    state: restarted
+  become: true
+  register: restart_result
+
+- name: debug restart jenkins
+  debug:
+    msg: "Restart Jenkins output: {{ restart_result }}"

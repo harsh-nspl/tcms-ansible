@@ -1,0 +1,3 @@
+replication_user: replicator
+replication_password: replica_pass
+replication_slot_name: replica_slot_1

@@ -1,0 +1,7 @@
+# tasks/install.yml
+- name: Install Apache
+  apt:
+    name: apache2
+    state: present
+    update_cache: yes
+  tags: apache_install

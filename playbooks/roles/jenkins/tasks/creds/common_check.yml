@@ -1,0 +1,27 @@
+- name: Check credential {{ cred_id }}
+  uri:
+    url: "{{ jenkins_url }}/credentials/store/system/domain/_/credential/{{ cred_id }}/api/json"
+    method: GET
+    user: "{{ jenkins_admin_user }}"
+    password: "{{ jenkins_admin_token }}"
+    force_basic_auth: yes
+    status_code: [200, 404]
+  register: cred_check
+
+- name: Ask update {{ cred_id }}
+  pause:
+    prompt: "{{ cred_id }} exists. Update? (yes/no)"
+  register: cred_prompt
+  when: cred_check.status == 200
+
+- name: Decide update {{ cred_id }}
+  set_fact:
+    "{{ cred_id | replace('-', '_') }}_should_update": >-
+      {{
+        cred_check.status == 404
+        or (cred_prompt.user_input | default('no') | lower == 'yes')
+      }}
+
+- name: Set exists flag {{ cred_id }}
+  set_fact:
+    "{{ cred_id | replace('-', '_') }}_exists": "{{ cred_check.status == 200 }}"

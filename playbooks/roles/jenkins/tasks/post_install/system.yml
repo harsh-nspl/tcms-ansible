@@ -1,0 +1,19 @@
+- name: Ensure build directory exists
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"
+    mode: '0755'
+
+- name: Install base system packages
+  apt:
+    name:
+      - curl
+      - gnupg
+      - ca-certificates
+      - build-essential
+      - ansible
+      - python3-pip
+    state: present
+    update_cache: yes

@@ -1,0 +1,31 @@
+- name: Install PgBouncer
+  apt:
+    name: pgbouncer
+    state: present
+    update_cache: yes
+
+- name: Ensure config directory exists
+  file:
+    path: "{{ pgbouncer_dest }}"
+    state: directory
+    owner: "{{ pgbouncer_user }}"
+    group: "{{ pgbouncer_group }}"
+    mode: '0755'
+
+- name: Deploy pgbouncer.ini from template
+  template:
+    src: pgbouncer.ini.j2
+    dest: "{{ pgbouncer_dest }}/pgbouncer.ini"
+    owner: "{{ pgbouncer_user }}"
+    group: "{{ pgbouncer_group }}"
+    mode: '0644'
+  notify: Restart PgBouncer
+
+- name: Deploy userlist.txt
+  copy:
+    src: userlist.txt
+    dest: "{{ pgbouncer_dest }}/userlist.txt"
+    owner: "{{ pgbouncer_user }}"
+    group: "{{ pgbouncer_group }}"
+    mode: '0644'
+  notify: Restart PgBouncer

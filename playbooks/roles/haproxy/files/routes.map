@@ -1,0 +1,5 @@
+/haproxytcms              stats
+/cicd                     cicd
+/aio-tcms/aiotcms-static/ aio_tcms_static
+/aio-tcms/api/            aio_tcms_public_api
+/aio-tcms/rest/            aio_tcms_backend

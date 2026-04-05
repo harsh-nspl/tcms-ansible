@@ -1,0 +1,11 @@
+- name: Pull Pulsar image
+  docker_container:
+    name: "{{ pulsar_container_name }}"
+    image: "{{ pulsar_image }}"
+    state: started
+    detach: yes
+    restart_policy: always
+    ports:
+      - "6650:6650"
+    command: >
+      bin/pulsar standalone

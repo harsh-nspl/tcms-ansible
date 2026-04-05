@@ -1,0 +1,78 @@
+# -----------------------------
+# Ensure required packages
+# -----------------------------
+- name: Install PostgreSQL server packages
+  package:
+    name:
+      - postgresql-{{ postgres_version }}
+      - postgresql-client-{{ postgres_version }}
+      - postgresql-contrib-{{ postgres_version }}
+    state: present
+
+- name: Ensure PostgreSQL service is started
+  service:
+    name: "postgresql@{{ postgres_version }}-{{ pg_cluster }}"
+    state: started
+    enabled: yes
+
+# -----------------------------
+# Check cluster
+# -----------------------------
+- name: Check if PG_VERSION exists
+  stat:
+    path: "{{ pg_data }}/PG_VERSION"
+  register: pg_version
+
+# -----------------------------
+# Create cluster if missing
+# -----------------------------
+- name: Create primary cluster
+  command: >
+    pg_createcluster {{ postgres_version }} {{ pg_cluster }}
+    --port {{ pg_port }}
+    --datadir {{ pg_data }}
+  when: not pg_version.stat.exists
+
+# -----------------------------
+# Fix permissions
+# -----------------------------
+- name: Fix permissions
+  file:
+    path: "{{ pg_data }}"
+    owner: postgres
+    group: postgres
+    recurse: yes
+
+# -----------------------------
+# Configure postgresql.conf safely (loop)
+# -----------------------------
+- name: Configure postgresql.conf parameters
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/{{ pg_cluster }}/postgresql.conf"
+    regexp: "^#?{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+    state: present
+  loop:
+    - { key: port, value: "{{ pg_port }}" }
+    - { key: listen_addresses, value: "'*'" }
+    - { key: wal_level, value: "replica" }
+    - { key: max_wal_senders, value: 5 }
+    - { key: wal_keep_size, value: "256MB" }
+    - { key: hot_standby, value: "on" }
+    - { key: synchronous_commit, value: "remote_apply" }
+
+
+- name: Reload PostgreSQL
+  service:
+    name: "postgresql@{{ postgres_version }}-{{ pg_cluster }}"
+    state: reloaded
+  become: yes
+
+# -----------------------------
+# Create replication user idempotently
+# -----------------------------
+- name: Ensure replication user exists
+  become_user: postgres
+  shell: |
+    psql -p {{ pg_port }} -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ replication_user }}'" | grep -q 1 || \
+    psql -p {{ pg_port }} -c "CREATE ROLE {{ replication_user }} WITH REPLICATION LOGIN PASSWORD '{{ replication_password }}';"

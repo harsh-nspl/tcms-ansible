@@ -1,0 +1,14 @@
+- name: Ensure Jenkins .ssh directory exists
+  file:
+    path: "{{ jenkins_home }}/.ssh"
+    state: directory
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"
+    mode: '0700'
+
+- name: Add Bitbucket to known_hosts
+  known_hosts:
+    path: "{{ jenkins_home }}/.ssh/known_hosts"
+    name: bitbucket.org
+    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa bitbucket.org 2>/dev/null') }}"
+    state: present

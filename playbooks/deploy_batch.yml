@@ -1,0 +1,8 @@
+- hosts: batch_server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: deploy_backend
+      tags: deploy_batch
+      vars:
+        deploy_type: "batch"

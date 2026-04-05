@@ -1,0 +1,5 @@
+#!/bin/sh
+
+{% for key, value in final_env.items() %}
+export {{ key }}="{{ value }}"
+{% endfor %}

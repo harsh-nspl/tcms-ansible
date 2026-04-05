@@ -1,0 +1,8 @@
+- hosts: tomcat_servers
+  become: yes
+  gather_facts: false
+  roles:
+    - role: deploy_backend
+      tags: deploy_war
+      vars:
+        deploy_type: "war"

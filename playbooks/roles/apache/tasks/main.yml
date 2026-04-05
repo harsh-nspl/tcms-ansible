@@ -1,0 +1,4 @@
+- include_tasks: uninstall.yml
+- include_tasks: install.yml
+- include_tasks: port_config.yml
+- include_tasks: dir_creation.yml

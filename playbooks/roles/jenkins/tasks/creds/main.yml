@@ -1,0 +1,44 @@
+- block:
+
+    # =========================
+    # 1️⃣ CHECK ALL CREDS FIRST
+    # =========================
+    - include_tasks: creds/common_check.yml
+      vars: { cred_id: "aws-credentials" }
+
+    - include_tasks: creds/common_check.yml
+      vars: { cred_id: "bitbucket-ssh-key" }
+
+    - include_tasks: creds/common_check.yml
+      vars: { cred_id: "ssh-key" }
+
+    - include_tasks: creds/common_check.yml
+      vars: { cred_id: "forge-credentials" }
+
+    # =========================
+    # 2️⃣ DECIDE IF AWS IS NEEDED
+    # =========================
+    - name: Decide if AWS creds are needed
+      set_fact:
+        aws_needed: >-
+          {{
+            aws_credentials_should_update
+            or bitbucket_ssh_key_should_update
+            or ssh_key_should_update
+          }}
+
+    # =========================
+    # 3️⃣ PROMPT AWS ONLY IF NEEDED
+    # =========================
+    - include_tasks: creds/aws_prompt.yml
+      when: aws_needed
+
+    # =========================
+    # 4️⃣ APPLY CREDS
+    # =========================
+    - include_tasks: creds/aws_creds.yml
+    - include_tasks: creds/bitbucket_ssh.yml
+    - include_tasks: creds/server_ssh.yml
+    - include_tasks: creds/forge_creds.yml
+
+  tags: jenkins-credentials

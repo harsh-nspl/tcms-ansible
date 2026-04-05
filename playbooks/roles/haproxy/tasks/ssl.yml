@@ -1,0 +1,36 @@
+# --- Fetch PEM locally (control node) ---
+- name: Fetch HAProxy PEM from AWS Secrets Manager (LOCAL)
+  delegate_to: localhost
+  run_once: true
+  command: >
+    /usr/local/bin/aws secretsmanager get-secret-value
+    --secret-id aio-wildcard-cert
+    --region ap-south-1
+    --query SecretString
+    --output text
+  environment:
+    AWS_PROFILE: default
+    AWS_SHARED_CREDENTIALS_FILE: "{{ lookup('env', 'HOME') }}/.aws/credentials"
+    AWS_CONFIG_FILE: "{{ lookup('env', 'HOME') }}/.aws/config"
+  register: secret_data
+  no_log: true
+  tags: haproxy
+
+# --- Fail if empty ---
+- name: Validate secret content
+  fail:
+    msg: "Secret aio-wildcard-cert is empty"
+  when: secret_data.stdout is not defined or secret_data.stdout | length == 0
+  run_once: true
+  tags: haproxy
+
+# --- Copy PEM to remote server ---
+- name: Copy HAProxy PEM to server
+  copy:
+    content: "{{ secret_data.stdout }}"
+    dest: /etc/ssl/certs/STAR_aiojiraapps_com.pem
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart haproxy
+  tags: haproxy

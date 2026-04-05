@@ -1,0 +1,14 @@
+- name: Prompt AWS credentials
+  block:
+    - pause:
+        prompt: "Enter AWS Access Key"
+      register: aws_access_key_input
+
+    - pause:
+        prompt: "Enter AWS Secret Key"
+        echo: no
+      register: aws_secret_key_input
+
+    - set_fact:
+        aws_access_key: "{{ aws_access_key_input.user_input }}"
+        aws_secret_key: "{{ aws_secret_key_input.user_input }}"

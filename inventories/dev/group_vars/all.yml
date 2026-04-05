@@ -1,0 +1,30 @@
+env: development
+
+ansible_user: ubuntu
+ansible_ssh_private_key_file: ~/Software/connect/new/key-development-mumbai.pem
+ansible_python_interpreter: /usr/bin/python3.12
+
+haproxy_domain: dev.aiojiraapps.com
+aws_ssh_key_secret: development-ssh-key-secret
+build_dir: /opt/builds
+node_version: 22.x
+postgres_version: 18
+dbname: aio-tcms
+dbuser: aiotcms
+
+env_vars:
+  tcms_env: TCMS_DEV
+  env_origin: https://{{haproxy_domain}}
+  db_url: jdbc:postgresql://host.docker.internal:6432/aio-tcms?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
+  db_url_read_only: jdbc:postgresql://host.docker.internal:6432/aio-tcms-read-only?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
+  attachment_store_type: LOCAL
+  pulsar_url: pulsar://host.docker.internal:6650
+  jenkins_proxy_ip: host.docker.internal
+  AIO_TCMS_ATTACHMENT_STORE_ROOT: /aio-tcms-store
+  AIO_TCMS_TEMP_FOLDER: /aio-tcms-store/tmp
+  AIO_TCMS_SMTP_MAIL_HOST: smtp.gmail.com
+  AIO_TCMS_SMTP_MAIL_PORT: 587
+  JCMA_DATA_DIRECTORY: /aio-tcms-jcma
+  AIO_TEST_BATCH: TEST_IMPORT_BATCH
+
+

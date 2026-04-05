@@ -1,0 +1,154 @@
+pipeline {
+    agent any
+
+
+    parameters {
+        string(name: 'BRANCH', defaultValue: 'release/4.9.4', description: 'Git branch')
+    }
+
+    options {
+        timestamps()
+        timeout(time: 60, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '3'))
+    }
+
+    environment {
+        HOST_BUILD_DIR = "/opt/builds"
+        REPO_NAME = "aio-tcms-frontend-v2"
+        CONFIG_REPO_NAME = "aio-tcms-env-config"
+
+        REPO_PATH = "${HOST_BUILD_DIR}/${REPO_NAME}"
+        CONFIG_PATH = "${HOST_BUILD_DIR}/${CONFIG_REPO_NAME}"
+
+        STATIC_PATH = "/var/www/html/aio-tcms/aiotcms-static"
+        NPM_CACHE_DIR = "${HOST_BUILD_DIR}/.npm-cache-${REPO_NAME}"
+
+        FORGE_ENV = "development-new"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                sshagent(['bitbucket-ssh-key']) {
+                    sh '''
+                    bash -euxo pipefail -c "
+                    mkdir -p $HOST_BUILD_DIR
+                    cd $HOST_BUILD_DIR
+
+                    if [ ! -d $REPO_NAME ]; then
+                        git clone git@bitbucket.org:harshiet/$REPO_NAME.git
+                    fi
+
+                    cd $REPO_NAME
+                    git fetch origin $BRANCH
+
+                    if git show-ref --verify --quiet refs/remotes/origin/$BRANCH; then
+                        git checkout -B $BRANCH origin/$BRANCH
+                    else
+                        echo 'Branch not found: '$BRANCH
+                        exit 1
+                    fi
+
+                    git reset --hard origin/$BRANCH
+
+                    cd $HOST_BUILD_DIR
+                    if [ ! -d $CONFIG_REPO_NAME ]; then
+                        git clone git@bitbucket.org:harshiet/$CONFIG_REPO_NAME.git
+                    fi
+
+                    cd $CONFIG_REPO_NAME
+                    git fetch origin
+                    git checkout master
+                    git reset --hard origin/master
+                    "
+                    '''
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                sh '''
+                bash -euxo pipefail -c "
+                cd $REPO_PATH
+                npm install --cache $NPM_CACHE_DIR
+                npm run build-dev
+                "
+                '''
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                sh '''
+                bash -euxo pipefail -c "
+                cd $REPO_PATH
+
+                rm -rf $STATIC_PATH/spa_new
+                mkdir -p $STATIC_PATH
+
+                cp -R dist/spa $STATIC_PATH/spa_new
+
+                mv $STATIC_PATH/spa $STATIC_PATH/spa_old 2>/dev/null || true
+                mv $STATIC_PATH/spa_new $STATIC_PATH/spa
+
+                rm -rf $STATIC_PATH/spa_old
+
+                "
+                '''
+            }
+        }
+
+        stage('Build Forge App') {
+            steps {
+                sh '''
+                bash -euxo pipefail -c "
+                cd $REPO_PATH
+
+                npm run build-forge
+
+                rm -rf etc/forge/static/spa
+                mkdir -p etc/forge/static
+                cp -R dist/spa etc/forge/static/
+                "
+                '''
+            }
+        }
+
+        stage('Deploy Forge App') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'forge-credentials',
+                        usernameVariable: 'FORGE_EMAIL',
+                        passwordVariable: 'FORGE_API_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                    bash -euxo pipefail -c "
+                    cd $REPO_PATH
+
+                    export SKIP_BUILD=true
+
+                    ./etc/forge/deploy-local.sh $FORGE_ENV
+                    "
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment successful (branch: ${params.BRANCH})"
+        }
+        failure {
+            echo "Deployment failed (branch: ${params.BRANCH})"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

@@ -1,0 +1,24 @@
+docker_image: "tomcat:10.1-jdk21"
+aws_env_secret_name: "env_variables_all_environments"
+war_path: "{{ build_dir }}/aio-jira-tcms-backend/cloud/target/aio-tcms-backend-cloud-1.0-SNAPSHOT.war"
+jar_path: "{{ build_dir }}/aio-jira-tcms-backend/cloud/target/aio-tcms-batch.jar"
+
+
+deploy_type: "war"   # war | batch
+
+docker_build_matrix:
+  war:
+    image_name: "aio-tcms-backend"
+    artifact_src: "{{ war_path }}"
+    artifact_dest: "aio-tcms.war"
+    dockerfile_template: "Dockerfile.war.j2"
+
+  batch:
+    image_name: "aio-tcms-batch"
+    artifact_src: "{{ jar_path }}"
+    artifact_dest: "aio-tcms-batch.jar"
+    dockerfile_template: "Dockerfile.batch.j2"
+
+docker_build_context: "/tmp/docker-build"
+env_file_path: "{{ build_dir }}/{{ deploy_type }}.env"
+container_name: "{{ docker_build_matrix[deploy_type].image_name }}-{{ app_role }}"

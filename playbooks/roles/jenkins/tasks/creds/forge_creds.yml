@@ -1,0 +1,22 @@
+- name: Prompt Forge username
+  pause:
+    prompt: "Enter Forge username"
+  register: forge_user
+  when: forge_credentials_should_update
+
+- name: Prompt Forge token
+  pause:
+    prompt: "Enter Forge token"
+    echo: no
+  register: forge_token
+  when: forge_credentials_should_update
+
+- include_tasks: ../credentials_api.yml
+  vars:
+    cred_id: "forge-credentials"
+    cred_type: "basic"
+    cred_username: "{{ forge_user.user_input }}"
+    cred_password: "{{ forge_token.user_input }}"
+    cred_exists: "{{ forge_credentials_exists }}"
+    cred_should_update: "{{ forge_credentials_should_update }}"
+  when: forge_credentials_should_update

@@ -1,0 +1,69 @@
+- name: Wait for Jenkins web UI
+  uri:
+    url: "{{ jenkins_url }}/login"
+    status_code: 200
+  register: jenkins_up
+  retries: 20
+  delay: 15
+  until: jenkins_up.status == 200
+
+- name: Stop Jenkins before installing plugins
+  systemd:
+    name: jenkins
+    state: stopped
+  become: yes
+
+- name: Install Jenkins plugins via Plugin Manager
+  become: yes
+  block:
+    - name: Ensure Jenkins plugin manager JAR is downloaded
+      get_url:
+        url: "https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.2/jenkins-plugin-manager-2.13.2.jar"
+        dest: /tmp/jenkins-plugin-manager.jar
+        mode: '0755'
+      register: plugin_manager_jar
+
+    - name: Ensure Jenkins WAR exists
+      stat:
+        path: /usr/share/java/jenkins.war
+      register: jenkins_war
+
+    - name: Fail if Jenkins WAR not found
+      fail:
+        msg: "Jenkins WAR file not found at /usr/share/java/jenkins.war"
+      when: not jenkins_war.stat.exists
+
+    - name: Generate plugins file
+      copy:
+        dest: /tmp/plugins.txt
+        content: "{{ jenkins_plugins | join('\n') }}"
+        mode: '0644'
+
+    - name: Run Jenkins Plugin Manager
+      shell: |
+        set -e
+        echo "🔌 Installing Jenkins plugins..."
+        export JENKINS_HOME=/var/lib/jenkins
+
+        java -jar /tmp/jenkins-plugin-manager.jar \
+          --war /usr/share/java/jenkins.war \
+          --plugin-file /tmp/plugins.txt \
+          --plugin-download-directory /var/lib/jenkins/plugins \
+          --verbose
+
+        chown -R jenkins:jenkins /var/lib/jenkins/plugins
+        echo "✅ Plugins installed"
+      args:
+        executable: /bin/bash
+      register: plugin_install
+      changed_when: "'Plugins installed' in plugin_install.stdout"
+
+    - name: Debug plugin installation output
+      debug:
+        var: plugin_install.stdout
+
+- name: Start Jenkins after installing plugins
+  systemd:
+    name: jenkins
+    state: started
+  become: yes

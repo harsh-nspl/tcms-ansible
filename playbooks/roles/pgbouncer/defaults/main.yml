@@ -1,0 +1,6 @@
+pgbouncer_port: 6432
+pgbouncer_listen_addr: 0.0.0.0
+
+pgbouncer_dest: "/etc/pgbouncer"
+pgbouncer_user: postgres
+pgbouncer_group: postgres

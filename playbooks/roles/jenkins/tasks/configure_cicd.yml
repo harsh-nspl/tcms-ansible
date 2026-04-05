@@ -1,0 +1,39 @@
+- name: Ensure systemd drop-in directory exists
+  file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Configure /cicd prefix
+  copy:
+    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    content: |
+      [Service]
+      Environment="JENKINS_PREFIX={{ jenkins_context }}"
+      Environment="JAVA_OPTS=-Djava.awt.headless=true -Djenkins.model.JenkinsLocationConfiguration.url={{ jenkins_url }}/"
+      TimeoutStartSec=10min
+    mode: '0644'
+  notify:
+    - restart jenkins
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+  become: true
+  register: daemon_reload_result
+
+- name: Show daemon reload output
+  debug:
+    var: daemon_reload_result
+
+
+- name: Restart Jenkins after configuring context path
+  service:
+    name: jenkins
+    state: restarted
+  become: true
+  register: jenkins_restart_result
+
+- name: Show Jenkins restart result
+  debug:
+    var: jenkins_restart_result

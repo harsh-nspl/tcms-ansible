@@ -1,0 +1,30 @@
+- name: Prompt for Jenkins admin username
+  pause:
+    prompt: "Enter Jenkins admin username"
+  register: jenkins_user_input
+  tags:
+    - jenkins-credentials
+    - jenkins-pipelines
+
+- name: Set Jenkins admin username
+  set_fact:
+    jenkins_admin_user: "{{ jenkins_user_input.user_input }}"
+  tags:
+    - jenkins-credentials
+    - jenkins-pipelines
+
+- name: Prompt for Jenkins admin API token
+  pause:
+    prompt: "Enter Jenkins admin API token"
+    echo: no
+  register: jenkins_token_input
+  tags:
+    - jenkins-credentials
+    - jenkins-pipelines
+
+- name: Set Jenkins admin API token
+  set_fact:
+    jenkins_admin_token: "{{ jenkins_token_input.user_input }}"
+  tags:
+    - jenkins-credentials
+    - jenkins-pipelines

@@ -1,0 +1,6 @@
+- hosts: jenkins_server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: jenkins
+      tags: jenkins

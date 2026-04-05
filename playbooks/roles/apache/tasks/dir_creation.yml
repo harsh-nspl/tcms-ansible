@@ -1,0 +1,25 @@
+# tasks/dir_creation.yml
+- name: Create Jenkins user if not exists
+  user:
+    name: "{{ jenkins_user }}"
+    system: yes
+    create_home: yes
+    shell: /bin/bash
+  tags: apache_dir
+
+- name: Add Jenkins user to www-data group
+  user:
+    name: "{{ jenkins_user }}"
+    groups: www-data
+    append: yes
+  tags: apache_dir
+
+- name: Create aio-tcms directory
+  file:
+    path: "{{ aio_tcms_dir }}"
+    state: directory
+    owner: "{{ jenkins_user }}"
+    group: www-data
+    mode: '2775'
+    recurse: yes
+  tags: apache_dir

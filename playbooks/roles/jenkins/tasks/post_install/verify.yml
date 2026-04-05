@@ -1,0 +1,14 @@
+- name: Verify installed tools
+  command: "{{ item }}"
+  loop:
+    - node -v
+    - npm -v
+    - forge --version
+    - ansible --version
+    - aws --version
+  register: tool_versions
+  ignore_errors: yes
+
+- name: Show tool versions
+  debug:
+    var: tool_versions.results | map(attribute='stdout') | list

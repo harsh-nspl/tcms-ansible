@@ -1,0 +1,44 @@
+- import_tasks: secrets.yml
+
+- name: Select docker config
+  set_fact:
+    docker_build: "{{ docker_build_matrix[deploy_type] }}"
+
+- name: Merge static env + secrets
+  set_fact:
+    final_env: "{{ env_vars | combine(secrets, recursive=True) }}"
+  run_once: true
+
+- name: Debug env keys (safe)
+  debug:
+    msg: "Final env keys: {{ final_env.keys() | list }}"
+  run_once: true
+
+- name: Ensure build dir exists
+  file:
+    path: "{{ docker_build_context }}"
+    state: directory
+    mode: '0755'
+  run_once: true
+
+- name: Render env file (shared)
+  template:
+    src: aio-tcms.env.j2
+    dest: "{{ env_file_path }}"
+    mode: '0644'
+  vars:
+    final_env: "{{ final_env }}"
+  run_once: true
+
+- name: Render setenv.sh (WAR only)
+  template:
+    src: setenv.sh.j2
+    dest: "{{ docker_build_context }}/setenv.sh"
+    mode: '0755'
+  vars:
+    final_env: "{{ final_env }}"
+  when: deploy_type == "war"
+  run_once: true
+
+- import_tasks: build.yml
+- import_tasks: deploy.yml

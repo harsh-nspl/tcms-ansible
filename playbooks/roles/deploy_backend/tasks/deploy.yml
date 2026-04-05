@@ -1,0 +1,32 @@
+- name: Remove existing container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    state: absent
+  ignore_errors: true
+
+- name: Set published ports (WAR only)
+  set_fact:
+    published_ports_final:
+      - "{{ app_port }}:8080"
+  when: deploy_type == "war"
+
+- name: Run container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ docker_build.image_name }}:{{ env }}"
+    env_file: "{{ env_file_path }}"
+    published_ports: "{{ published_ports_final | default(omit) }}"
+    etc_hosts:
+      host.docker.internal: host-gateway
+    state: started
+    restart_policy: unless-stopped
+
+- name: Wait for container stability
+  pause:
+    seconds: 5
+
+- name: Verify container running
+  shell: docker ps --filter "name={{ container_name }}" --format "{{ '{{.Names}}' }}"
+  register: container_status
+  changed_when: false
+  failed_when: container_status.stdout == ""

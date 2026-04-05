@@ -1,0 +1,5 @@
+- import_tasks: post_install/ssh.yml
+- import_tasks: post_install/system.yml
+- import_tasks: post_install/node.yml
+- import_tasks: post_install/tools.yml
+- import_tasks: post_install/verify.yml
