@@ -1,0 +1,32 @@
+---
+- name: Create backup directory
+  file:
+    path: "{{ build_dir }}/backups/{{ ansible_date_time.date }}"
+    state: directory
+    mode: '0755'
+  run_once: true
+
+- name: Get current container image ID
+  community.docker.docker_container_info:
+    name: "{{ container_name }}"
+  register: current_container
+  ignore_errors: yes
+
+- name: Tag current image as backup
+  community.docker.docker_image:
+    name: "{{ docker_build.image_name }}"
+    tag: "{{ env }}"
+    repository: "{{ docker_build.image_name }}"
+    push: no
+    source: local
+  when: current_container.container is defined
+  ignore_errors: yes
+  run_once: true
+
+- name: Backup current env file
+  copy:
+    src: "{{ env_file_path }}"
+    dest: "{{ build_dir }}/backups/{{ ansible_date_time.date }}/{{ deploy_type }}.env.bak"
+    remote_src: yes
+  ignore_errors: yes
+  run_once: true

@@ -1,5 +1,8 @@
 - import_tasks: secrets.yml
 
+- import_tasks: backup.yml
+  tags: [backup]
+
 - name: Select docker config
   set_fact:
     docker_build: "{{ docker_build_matrix[deploy_type] }}"

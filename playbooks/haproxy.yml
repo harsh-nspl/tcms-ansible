@@ -1,6 +1,6 @@
 - hosts: haproxy_server
   become: yes
-  gather_facts: false
+  gather_facts: yes
   roles:
     - role: haproxy
       tags: haproxy

@@ -1,15 +1,6 @@
-- name: Install required packages
-  apt:
-    name:
-      - ca-certificates
-      - curl
-      - gnupg
-      - jq
-    update_cache: yes
-    cache_valid_time: 3600
-
 # ---------------------------
 # Docker install
+# (common role handles base packages: ca-certificates, curl, gnupg, jq)
 # ---------------------------
 
 - name: Ensure keyrings directory exists
