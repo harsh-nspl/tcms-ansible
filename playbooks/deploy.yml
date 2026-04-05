@@ -4,7 +4,7 @@
   become: yes
   gather_facts: yes
   serial: "{{ serial_count | default(1) }}"
-  max_fail_percentage: 25
+  max_fail_percentage: "{{ max_fail_percentage | default(25) }}"
 
   pre_tasks:
     - name: Validate deployment type

@@ -21,7 +21,6 @@
       stat:
         path: "{{ backup_dir }}/{{ deploy_type }}.env.bak"
       register: backup_env
-      delegate_to: localhost
       run_once: true
 
     - name: Warn if no backup found
