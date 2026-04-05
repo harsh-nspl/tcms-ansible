@@ -34,10 +34,3 @@
 
 - debug:
     var: aws_version.stdout
-
-- name: Check AWS identity
-  command: aws sts get-caller-identity
-  register: aws_identity
-
-- debug:
-    var: aws_identity.stdout

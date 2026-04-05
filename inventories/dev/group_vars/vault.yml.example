@@ -1,9 +1,0 @@
----
-# Copy this file to vault.yml and encrypt with ansible-vault:
-#   ansible-vault create inventories/dev/group_vars/vault.yml
-#
-# Reference these variables in role defaults/vars as:
-#   replication_password: "{{ vault_replication_password }}"
-
-vault_replication_password: "your-secure-replication-password-here"
-vault_pgbouncer_password: "your-secure-pgbouncer-password-here"
