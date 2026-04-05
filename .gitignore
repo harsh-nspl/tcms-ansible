@@ -1,0 +1,10 @@
+*.retry
+*.pyc
+__pycache__/
+.vault_pass
+*.pem
+inventories/*/group_vars/vault.yml
+inventories/*/group_vars/*/vault.yml
+/tmp/
+.molecule/
+.facts_cache/

@@ -1,6 +1,6 @@
 - hosts: docker_servers
   become: yes
-  gather_facts: false
+  gather_facts: yes
   roles:
     - role: docker
       tags: docker

@@ -1,8 +1,14 @@
-- name: Remove existing container
+- name: Stop existing container gracefully
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    state: stopped
+    stop_timeout: 30
+  ignore_errors: yes
+
+- name: Remove old container
   community.docker.docker_container:
     name: "{{ container_name }}"
     state: absent
-  ignore_errors: true
 
 - name: Set published ports (WAR only)
   set_fact:
@@ -10,7 +16,7 @@
       - "{{ app_port }}:8080"
   when: deploy_type == "war"
 
-- name: Run container
+- name: Deploy container
   community.docker.docker_container:
     name: "{{ container_name }}"
     image: "{{ docker_build.image_name }}:{{ env }}"
@@ -20,13 +26,16 @@
       host.docker.internal: host-gateway
     state: started
     restart_policy: unless-stopped
+    log_driver: json-file
+    log_options:
+      max-size: "100m"
+      max-file: "3"
+  register: container_result
 
-- name: Wait for container stability
-  pause:
-    seconds: 5
-
-- name: Verify container running
-  shell: docker ps --filter "name={{ container_name }}" --format "{{ '{{.Names}}' }}"
-  register: container_status
-  changed_when: false
-  failed_when: container_status.stdout == ""
+- name: Wait for container to be running
+  community.docker.docker_container_info:
+    name: "{{ container_name }}"
+  register: container_info
+  until: container_info.container.State.Running
+  retries: 6
+  delay: 5
