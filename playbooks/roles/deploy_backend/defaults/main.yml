@@ -35,6 +35,6 @@ env_vars:
   AIO_TCMS_SMTP_MAIL_PORT: 587
   AIO_TCMS_ENV_ORIGIN: https://{{haproxy_domain}}
   JCMA_DATA_DIRECTORY: /aio-tcms-jcma
-  PULSAR_URL: pulsar://host.docker.internal:6650
+  PULSAR_URL: pulsar://{{ hostvars['pulsar'].ansible_default_ipv4.address }}:6650
   AIO_TCMS_JENKINS_PROXY_IP: host.docker.internal
   AIO_TCMS_ATTACHMENT_STORE_ROOT: /aio-tcms-store
