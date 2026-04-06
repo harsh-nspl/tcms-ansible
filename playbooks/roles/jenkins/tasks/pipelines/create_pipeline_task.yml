@@ -2,6 +2,11 @@
 # ------------------------
 # Create or update a Jenkins pipeline without Groovy
 # ------------------------
+
+- name: URL encode job name
+  set_fact:
+    job_name_encoded: "{{ job_item.name | urlencode }}"
+
 - name: Build pipeline XML
   set_fact:
     pipeline_xml: |
@@ -21,7 +26,7 @@
             </userRemoteConfigs>
             <branches>
               <hudson.plugins.git.BranchSpec>
-                <name>'*/master'</name>
+                <name>{{ job_item.branch | default('*/master') }}</name>
               </hudson.plugins.git.BranchSpec>
             </branches>
             <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
@@ -35,13 +40,26 @@
         <disabled>false</disabled>
       </flow-definition>
 
-- name: URL encode job name
-  set_fact:
-    job_name_encoded: "{{ job_item.name | urlencode }}"
+- name: Check if Jenkins job exists
+  uri:
+    url: "{{ jenkins_url }}/job/{{ job_name_encoded }}/api/json"
+    method: GET
+    user: "{{ jenkins_admin_user | trim }}"
+    password: "{{ jenkins_admin_token | trim }}"
+    force_basic_auth: yes
+    status_code: [ 200, 404 ]
+    return_content: yes
+  register: job_check
+  delegate_to: localhost
 
 - name: Create or update Jenkins pipeline
   uri:
-    url: "{{ jenkins_url }}/createItem?name={{ job_name_encoded }}"
+    url: >-
+      {% if job_check.status == 404 %}
+      {{ jenkins_url }}/createItem?name={{ job_name_encoded }}
+      {% else %}
+      {{ jenkins_url }}/job/{{ job_name_encoded }}/config.xml
+      {% endif %}
     method: POST
     user: "{{ jenkins_admin_user | trim }}"
     password: "{{ jenkins_admin_token | trim }}"
@@ -49,5 +67,5 @@
     headers:
       Content-Type: "application/xml"
     body: "{{ pipeline_xml }}"
-    status_code: [200, 201, 302]
+    status_code: [ 200, 201, 302 ]
   delegate_to: localhost

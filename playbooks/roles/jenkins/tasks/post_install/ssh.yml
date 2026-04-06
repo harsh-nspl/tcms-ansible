@@ -1,14 +1,37 @@
+# ------------------------
+# Detect Jenkins home dynamically
+# ------------------------
+- name: Set Jenkins user home
+  ansible.builtin.shell: |
+    getent passwd jenkins | cut -d: -f6
+  register: jenkins_home_cmd
+  changed_when: false
+  check_mode: false
+
+- name: Set fact for Jenkins home
+  ansible.builtin.set_fact:
+    jenkins_user_home: "{{ jenkins_home_cmd.stdout }}"
+    jenkins_user: "jenkins"
+
+# ------------------------
+# Ensure .ssh directory exists
+# ------------------------
 - name: Ensure Jenkins .ssh directory exists
-  file:
-    path: "{{ jenkins_home }}/.ssh"
+  ansible.builtin.file:
+    path: "{{ jenkins_user_home }}/.ssh"
     state: directory
     owner: "{{ jenkins_user }}"
     group: "{{ jenkins_user }}"
     mode: '0700'
 
+# ------------------------
+# Add Bitbucket to known_hosts
+# ------------------------
 - name: Add Bitbucket to known_hosts
-  known_hosts:
-    path: "{{ jenkins_home }}/.ssh/known_hosts"
+  ansible.builtin.known_hosts:
+    path: "{{ jenkins_user_home }}/.ssh/known_hosts"
     name: bitbucket.org
     key: "{{ lookup('pipe', 'ssh-keyscan -t rsa bitbucket.org 2>/dev/null') }}"
     state: present
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"

@@ -1,5 +1,4 @@
 jenkins_user: jenkins
-jenkins_home: /var/lib/jenkins/
 jenkins_port: 8080
 jenkins_context: /cicd
 jenkins_url: https://{{haproxy_domain}}{{jenkins_context}}
