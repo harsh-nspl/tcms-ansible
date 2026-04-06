@@ -26,14 +26,14 @@ pipeline {
 
     stages {
 
-//        stage('Checkout & Build WAR') {
-//            steps {
-//                tcmsBuild(
-//                    repoName: env.REPO_NAME,
-//                    buildCommand: './mvnw -f pom.xml clean install -DskipTests -Dmaven.javadoc.skip=true -pl !aio.jira.app:aio-tests-dc'
-//                )
-//            }
-//        }
+        stage('Checkout & Build WAR') {
+            steps {
+                tcmsBuild(
+                    repoName: env.REPO_NAME,
+                    buildCommand: './mvnw -f pom.xml clean install -DskipTests -Dmaven.javadoc.skip=true -pl !aio.jira.app:aio-tests-dc'
+                )
+            }
+        }
 
         stage('Deploy WAR via Ansible') {
             steps {
