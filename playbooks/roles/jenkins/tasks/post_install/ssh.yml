@@ -33,5 +33,3 @@
     name: bitbucket.org
     key: "{{ lookup('pipe', 'ssh-keyscan -t rsa bitbucket.org 2>/dev/null') }}"
     state: present
-    owner: "{{ jenkins_user }}"
-    group: "{{ jenkins_user }}"
