@@ -109,10 +109,10 @@
 #    group: root
 #    mode: '0755'
 
-- name: Install Docker SDK for Python
-  apt:
-    name: python3-docker
-    state: present
+#- name: Install Docker SDK for Python
+#  apt:
+#    name: python3-docker
+#    state: present
 
 # ---------------------------
 # Run Docker registry container
