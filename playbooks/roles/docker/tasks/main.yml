@@ -97,17 +97,17 @@
     state: restarted
   when: jenkins_status.stdout == "active"
 
-# ---------------------------
-# Create registry storage
-# ---------------------------
-
-- name: Create registry data directory
-  file:
-    path: /opt/registry/data
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+## ---------------------------
+## Create registry storage
+## ---------------------------
+#
+#- name: Create registry data directory
+#  file:
+#    path: /opt/registry/data
+#    state: directory
+#    owner: root
+#    group: root
+#    mode: '0755'
 
 - name: Install Docker SDK for Python
   apt:
@@ -118,13 +118,13 @@
 # Run Docker registry container
 # ---------------------------
 
-- name: Run Docker registry container
-  docker_container:
-    name: registry
-    image: registry:2
-    state: started
-    restart_policy: always
-    ports:
-      - "{{ private_ip }}:5000:5000"
-    volumes:
-      - /opt/registry/data:/var/lib/registry
+#- name: Run Docker registry container
+#  docker_container:
+#    name: registry
+#    image: registry:2
+#    state: started
+#    restart_policy: always
+#    ports:
+#      - "{{ private_ip }}:5000:5000"
+#    volumes:
+#      - /opt/registry/data:/var/lib/registry
