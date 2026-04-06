@@ -1,10 +1,10 @@
-#- import_tasks: install.yml
-#- import_tasks: configure_cicd.yml
-#- import_tasks: plugins.yml
+- import_tasks: install.yml
+- import_tasks: configure_cicd.yml
+- import_tasks: plugins.yml
 - import_tasks: prompt_admin.yml
-#- import_tasks: creds/main.yml
-#  tags: jenkins-credentials
+- import_tasks: creds/main.yml
+  tags: jenkins-credentials
 - import_tasks: pipelines/pipelines.yml
-#- import_tasks: post-install.yml
+- import_tasks: post-install.yml
 
 
