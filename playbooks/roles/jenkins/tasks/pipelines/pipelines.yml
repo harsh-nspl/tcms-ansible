@@ -1,0 +1,29 @@
+# ------------------------
+# Get Jenkins crumb
+# ------------------------
+- name: Get Jenkins crumb
+  uri:
+    url: "{{ jenkins_url }}/crumbIssuer/api/json"
+    method: GET
+    user: "{{ jenkins_admin_user | trim }}"
+    password: "{{ jenkins_admin_token | trim }}"
+    force_basic_auth: yes
+    return_content: yes
+  register: crumb_response
+
+- name: Set Jenkins headers
+  set_fact:
+    jenkins_headers:
+      "{{ crumb_response.json.crumbRequestField }}": "{{ crumb_response.json.crumb }}"
+      Cookie: "{{ crumb_response.cookies_string }}"
+
+# ------------------------
+# Loop over jobs
+# ------------------------
+- name: Loop over Jenkins jobs
+  include_tasks: create_pipeline_task.yml
+  loop: "{{ jenkins_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    job_item: "{{ item }}"

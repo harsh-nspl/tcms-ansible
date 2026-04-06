@@ -25,10 +25,4 @@ jenkins_jobs:
     script: "ansible/pipelines/aio-tcms-frontend/Jenkinsfile"
   - name: "AIO Tests - Batch"
     script: "ansible/pipelines/aio-tcms-batch/Jenkinsfile"
-#  - name: "generic-deploy"
-#    script: "ansible/pipelines/generic-deploy/Jenkinsfile"
-#  - name: "Setup Apache Pulsar"
-#    script: "ansible/pipelines/apache-pulsar/Jenkinsfile"
-#  - name: "Setup PgBouncer"
-#    script: "ansible/pipelines/pgbouncer/Jenkinsfile"
 

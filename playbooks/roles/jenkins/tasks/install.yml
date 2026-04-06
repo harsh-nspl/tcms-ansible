@@ -1,10 +1,10 @@
-- name: Ensure Java 17 and fontconfig are installed
+- name: Ensure Java 21 and fontconfig are installed
   apt:
     name: "{{ item }}"
     state: present
     update_cache: yes
   loop:
-    - openjdk-17-jre
+    - openjdk-21-jre
     - fontconfig
 
 - name: Add Jenkins GPG key
