@@ -1,0 +1,10 @@
+- hosts: all
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+
+  roles:
+    - role: monitoring/alloy
+#    - role: monitoring/grafana
+#    - role: monitoring/grafana
+#      tasks_from: notifications.yml

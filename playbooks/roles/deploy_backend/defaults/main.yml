@@ -22,3 +22,19 @@ docker_build_matrix:
 docker_build_context: "/tmp/docker-build"
 env_file_path: "{{ build_dir }}/{{ deploy_type }}.env"
 container_name: "{{ docker_build_matrix[deploy_type].image_name }}-{{ app_role }}"
+
+
+env_vars:
+  AIO_TCMS_ENV: {{ tcms_env }}
+  AIO_TCMS_ATTACHMENT_STORE_TYPE: {{ attachment_store_type }}
+  AIO_TEST_BATCH: {{ aio_test_batch | default(omit) }}
+  AIO_TCMS_DB_URL: jdbc:postgresql://host.docker.internal:6432/aio-tcms?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
+  AIO_TCMS_DB_URL_READ_ONLY: jdbc:postgresql://host.docker.internal:6432/aio-tcms-read-only?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
+  AIO_TCMS_TEMP_FOLDER: /aio-tcms-store/tmp
+  AIO_TCMS_SMTP_MAIL_HOST: smtp.gmail.com
+  AIO_TCMS_SMTP_MAIL_PORT: 587
+  AIO_TCMS_ENV_ORIGIN: https://{{haproxy_domain}}
+  JCMA_DATA_DIRECTORY: /aio-tcms-jcma
+  PULSAR_URL: pulsar://host.docker.internal:6650
+  AIO_TCMS_JENKINS_PROXY_IP: host.docker.internal
+  AIO_TCMS_ATTACHMENT_STORE_ROOT: /aio-tcms-store

@@ -1,0 +1,8 @@
+- name: Configure Grafana notification channels
+  grafana_notification:
+    name: "{{ item.name }}"
+    type: "{{ item.type }}"
+    uid: "{{ item.uid }}"
+    isDefault: "{{ item.isDefault }}"
+    settings: "{{ item.settings }}"
+  loop: "{{ grafana_notifications }}"

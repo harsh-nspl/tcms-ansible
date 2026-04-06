@@ -1,0 +1,73 @@
+- name: Ensure Alloy directory exists
+  file:
+    path: "{{ alloy_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download Alloy binary
+  get_url:
+    url: "https://github.com/grafana/alloy-otel-collector/releases/download/v{{ alloy_version }}/alloy-otel-collector_{{ alloy_version }}_linux_amd64.tar.gz"
+    dest: "/tmp/alloy.tar.gz"
+    mode: '0755'
+
+- name: Extract Alloy binary
+  unarchive:
+    src: "/tmp/alloy.tar.gz"
+    dest: "{{ alloy_install_dir }}"
+    remote_src: yes
+
+- name: Symlink Alloy binary
+  file:
+    src: "{{ alloy_install_dir }}/alloy-otel-collector"
+    dest: "/usr/local/bin/alloy"
+    state: link
+
+- name: Deploy Alloy configuration
+  template:
+    src: alloy-config.yml.j2
+    dest: "{{ alloy_config_file }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create systemd service for Alloy
+  copy:
+    dest: /etc/systemd/system/alloy.service
+    content: |
+      [Unit]
+      Description=Grafana Alloy OTEL Collector
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/local/bin/alloy --config {{ alloy_config_file }}
+      Restart=always
+      User=root
+      Group=root
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start Alloy service
+  systemd:
+    name: alloy
+    state: started
+    enabled: yes
+
+- name: Run cAdvisor container for Docker metrics
+  community.docker.docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro

@@ -11,19 +11,37 @@ postgres_version: 18
 dbname: aio-tcms
 dbuser: aiotcms
 
-env_vars:
-  tcms_env: TCMS_DEV
-  env_origin: https://{{haproxy_domain}}
-  db_url: jdbc:postgresql://host.docker.internal:6432/aio-tcms?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
-  db_url_read_only: jdbc:postgresql://host.docker.internal:6432/aio-tcms-read-only?assumeMinServerVersion=18.0&ApplicationName=AIO_TCMS_DEV_TOMCAT
-  attachment_store_type: LOCAL
-  pulsar_url: pulsar://host.docker.internal:6650
-  jenkins_proxy_ip: host.docker.internal
-  AIO_TCMS_ATTACHMENT_STORE_ROOT: /aio-tcms-store
-  AIO_TCMS_TEMP_FOLDER: /aio-tcms-store/tmp
-  AIO_TCMS_SMTP_MAIL_HOST: smtp.gmail.com
-  AIO_TCMS_SMTP_MAIL_PORT: 587
-  JCMA_DATA_DIRECTORY: /aio-tcms-jcma
-  AIO_TEST_BATCH: TEST_IMPORT_BATCH
+tcms_env: TCMS_DEV
+attachment_store_type: LOCAL
+aio_test_batch: TEST_IMPORT_BATCH
 
 
+# Alloy host-native installation
+alloy_version: "0.17.1"
+alloy_install_dir: /opt/alloy
+alloy_config_file: "{{ alloy_install_dir }}/alloy-config.yml"
+alloy_prometheus_port: 9090
+alloy_listen_port: 4317
+
+monitor_host: true
+monitor_docker: true
+
+docker_scrape_targets:
+  - 'localhost:8080'
+  - 'localhost:8081'
+
+# Grafana settings
+grafana_url: "http://localhost:3000"
+grafana_user: "admin"
+grafana_password: "admin"
+
+grafana_notifications:
+  - name: "Slack Alerts"
+    type: "slack"
+    uid: "slack_alerts"
+    isDefault: true
+    settings:
+      url: "https://hooks.slack.com/services/TXXXX/BXXXX/XXXXXX"
+      recipient: "#alerts"
+      sendReminder: true
+      frequency: "60s"

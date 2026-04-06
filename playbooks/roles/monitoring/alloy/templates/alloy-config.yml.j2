@@ -1,0 +1,43 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+{% if monitor_host %}
+  hostmetrics:
+    collection_interval: 15s
+    scrapers:
+      cpu:
+      memory:
+      filesystem:
+      network:
+{% endif %}
+
+{% if monitor_docker %}
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'cadvisor'
+          static_configs:
+            - targets: ['localhost:8080']
+{% for target in docker_scrape_targets %}
+        - job_name: 'docker_{{ loop.index }}'
+          static_configs:
+            - targets: ['{{ target }}']
+{% endfor %}
+{% endif %}
+
+processors:
+  batch:
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:{{ alloy_prometheus_port }}"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp{% if monitor_host %}, hostmetrics{% endif %}{% if monitor_docker %}, prometheus{% endif %}]
+      processors: [batch]
+      exporters: [prometheus]

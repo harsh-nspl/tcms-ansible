@@ -1,0 +1,12 @@
+- name: Ensure Grafana is installed
+  # Example for Ubuntu
+  apt:
+    name: grafana
+    state: latest
+    update_cache: yes
+
+- name: Enable and start Grafana
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: yes
